@@ -1,0 +1,30 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  Options +FollowSymlinks
+  # !IMPORTANT! Set your RewriteBase here and don't forget trailing and leading
+  #  slashes.
+  # If your page resides at
+  #  http://www.example.com/mypage/test1
+  # then use
+  # RewriteBase /mypage/test1/
+  RewriteBase /logo-generator/
+  
+  # imitate symlinks for files and download folders
+  RewriteRule ^files/(.*) application/downloads/$1 [L,R=301]
+  RewriteRule ^assets/(.*) application/assets/$1 [L,R=301]
+  
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ index.php?/$1 [L]
+  
+  
+  #RewriteCond %{THE_REQUEST} ^GET\ /application/files/
+  #RewriteRule ^/application/files/(.*) /files/$1 [L,R=301]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+  # If we don't have mod_rewrite installed, all 404's
+  # can be sent to index.php, and everything works as normal.
+
+  ErrorDocument 404 /index.php
+</IfModule>

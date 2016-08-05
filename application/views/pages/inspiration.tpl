@@ -1,0 +1,2 @@
+<h1>Design Inspiration</h1>
+<p>This page will soon be completed. If you have any suggestions or ideas you are more than welcome to <a href="{{ci_url function='site_url' segments="docs/visual-identity-manual"}}">share</a> them!</p>

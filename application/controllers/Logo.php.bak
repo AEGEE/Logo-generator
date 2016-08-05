@@ -1,0 +1,209 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+class Logo extends MY_Controller 
+{
+
+
+	public function index()
+	{
+		redirect('logo/customise');
+	}
+
+	/**
+	 * Show the customisation form
+	 * load locals and available subtexts for customisation
+	 */
+	public function customise()
+	{
+		//$this->db->db_select('logo-generator');
+		$qSubtext = $this->db->query('SELECT language, subtext FROM logo_subtext ORDER BY language ASC');
+		parent::assign('subtexts', $qSubtext->result());
+		
+		$this->db->db_select('ab');
+		//$this->load->database('aegeeorg');
+		$qLocals = $this->db->query('SELECT BodyCode, BodyName FROM bodies ORDER BY BodyName ASC');
+		
+		// go back to default table
+		$this->db->db_select('logo-generator');
+		
+		parent::assign('csrf', array(
+			'name' => $this->security->get_csrf_token_name(),
+			'hash' => $this->security->get_csrf_hash()
+		));
+		
+		parent::assign('form', array(
+			'token' => $this->security->get_csrf_hash(),
+			'url' => $this->config->item('base_url')
+		));
+		parent::assign('locals', $qLocals->result());	
+		parent::view('logo-generation/logo');
+	}
+	
+	/**
+	 * Generate request 
+	 * returns json for ajax processing
+	 */
+	public function generate()
+	{
+		$this->load->model('logomodel');
+
+		$progress = $this->logomodel->getProgress();
+		$settings = $this->logomodel->getSettings();
+		
+		$this->load->library('form_validation');
+		// a new generation call has been initiated, thus reset old one.
+		$request = $this->input->post('request', TRUE) ;		
+		
+		// there are progress variables, so continue
+		if($progress != false)
+		{
+			// a new request was made
+			if($request == 'reset') // || $settings['request'] != $request
+			{
+				$this->logomodel->reset();
+				$progress = $this->logomodel->getProgress();		
+			}
+
+			else
+			{
+				// continue current generation process
+				// retrieve status for ajax calls or page refreshes
+				$this->status();
+			}
+		}
+
+		
+		// A new generation request has been made
+		if($progress == false)
+		{
+		
+			$resultInit = $this->logomodel->init();
+
+			if($resultInit['status'] === true)
+			{
+				$this->logomodel->setup();
+				
+				$return['code'] = 201;
+				$return['message'] = 'Generating';
+			}
+			else
+			{
+				$return['code'] = 412;
+				$return['message'] = 'bad Request (0x3)';
+			}
+				
+			$progress = $this->logomodel->getProgress();
+			parent::assign('progress', $progress);
+			parent::assign($return);
+			parent::view('logo-generation/generate');
+	
+		}
+		
+	}
+	
+	/**
+	 * Retrieve status on progress
+	 * returns json for ajax processing
+	 */
+	public function status()
+	{
+		$this->load->model('logomodel');
+		
+		// initiated the right instance by getting the data
+		$resultInit = $this->logomodel->init();
+		$progress = $this->logomodel->getProgress();
+		if($progress['status'] < 20)
+		{
+			//still initialising
+		}
+		elseif($progress['status'] < 39)
+		{
+			//still in setup phase
+		}
+		elseif($progress['status'] < 50)
+		{
+			$resultGenerate = $this->logomodel->generate();
+		}
+		
+		$settings = $this->logomodel->getSettings();
+		// redirect and provide download
+		if($progress['status'] >= 99)
+		{
+			// download link can be returned
+			$return['code'] = 201;
+			$return['message'] = 'Finished';
+			
+			$zipFiles = $this->logomodel->getZipFilenames();
+				
+			if($zipFiles != false)
+			{
+				$size = filesize($zipFiles['source']);
+				$sizeMB = round($size / (1024 * 1024), 2);
+				parent::assign('downloadSize',  $sizeMB);
+			}
+			
+			parent::assign('downloadLink',  site_url("logo/download"));
+		}		
+		else
+		{
+			$return['code'] = 201;
+			$return['message'] = 'Generating';
+			parent::assign($return);
+		}
+		
+		parent::assign('progress', $progress);
+		parent::assign('settings', $settings);
+		parent::view('logo-generation/generate');
+	}
+	
+	/**
+	 * Provide download link
+	 */
+	public function download($which = false)
+	{
+		$this->load->model('logomodel');
+		$resultInit = $this->logomodel->init();
+		
+		$progress = $this->logomodel->getProgress();
+		if($progress['status'] < 90)
+		{
+			//redirect('/logo/generate');
+		}
+		
+		$settings = $this->logomodel->getSettings();
+		$zipFiles = $this->logomodel->getZipFilenames();
+	
+		if($zipFiles != false)
+		{
+			$this->load->helper('download');
+			$data = file_get_contents($zipFiles['source']); // Read the file's contents
+			
+			force_download($zipFiles['target'], $data);
+			
+		}
+		else
+		{
+			// return error
+			$return['code'] = 404;
+			$return['message'] = 'Could not find the download file. Please try again.';
+			$return['data'] = array(
+				'result' => $resultInit,
+				'progress' => $progress,
+				'settings' => $settings,
+				'zipFiles' => $zipFiles
+			);	
+			parent::assign($return);
+			parent::view('logo-generation/generate');
+		}
+	}
+
+	/**
+	 * Cancels the generation process
+	 */
+	public function cancel()
+	{
+		$this->load->model('logomodel');
+		$this->logomodel->reset();
+		redirect('logo/customise');
+	}
+}

@@ -1,0 +1,59 @@
+/* top links */
+#aegee-top-links{
+	background-color: #1468b3;
+	height: 40px;
+	position: relative;
+	z-index: 999;
+	box-shadow: 0 0 3px rgba(0,0,0,0.5);
+}
+#aegee-top-links .aegee-top-links-wrapper{
+	max-width: 990px;
+	margin: 0 auto;
+}
+#aegee-top-links  .user-top-links{
+	float: right;
+}
+#aegee-top-links nav ul li a,
+#aegee-top-links nav ul li span
+{
+	display: block;
+	padding: 10px 5px;
+	font-size: 8pt;
+	color: #fff;
+	text-decoration: none;
+	vertical-align: middle;
+}
+
+#aegee-top-links nav ul{
+	list-style: none;
+	clear: both;
+}
+#aegee-top-links nav ul li{
+	float: left;
+}
+#aegee-top-links li a:hover{
+	background-color: rgba(255,255,255,0.2);
+}
+#aegee-top-links li#favicon a{ 
+	margin-bottom: -1px;
+	padding: 2px 4px 0px;
+}
+#aegee-top-links li.search{
+	float: right;
+	font-size: 7pt;	
+	margin-top: 5px;
+}
+#aegee-top-links li.search input{
+	border-radius: 11px;
+	border: 0;
+	padding: 4px 6px;
+	width: 50px;
+	background-color: rgba(255,255,255,0.2);
+}
+#aegee-top-links li.search input:hover{
+	background-color: rgba(255,255,255,0.3);
+}
+#aegee-top-links li.search input:focus{
+	width: 150px;
+	background-color: rgba(255,255,255,0.4);
+}
