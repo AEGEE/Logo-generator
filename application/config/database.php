@@ -52,7 +52,7 @@ $db['logo'] = array(
 	'dsn'	=> '',
 	'hostname' => 'localhost',
 	'username' => 'logo-generator',
-	'password' => 'YZ*WLf:GvZ3;PSgQ+\o#BcI+#4Ws',
+	'password' => '',
 	'database' => 'logo-generator',
 	'database2' => 'ab',
 	'dbdriver' => 'mysqli',
@@ -72,40 +72,6 @@ $db['logo'] = array(
 );
 
 
-/*
-$db['logo']['hostname'] = 'localhost';
-$db['logo']['username'] = 'logo-generator';
-$db['logo']['password'] = 'YZ*WLf:GvZ3;PSgQ+\o#BcI+#4Ws';
-$db['logo']['database'] = 'logo-generator';
-$db['logo']['dbdriver'] = 'mysql';
-$db['logo']['dbprefix'] = '';
-$db['logo']['pconnect'] = TRUE;
-$db['logo']['db_debug'] = TRUE;
-$db['logo']['cache_on'] = FALSE;
-$db['logo']['cachedir'] = '';
-$db['logo']['char_set'] = 'utf8';
-$db['logo']['dbcollat'] = 'utf8_general_ci';
-$db['logo']['swap_pre'] = '';
-$db['logo']['autoinit'] = TRUE;
-$db['logo']['stricton'] = FALSE;
-
-
-$db['aegeeorg']['hostname'] = 'localhost';
-$db['aegeeorg']['username'] = 'logo-generator';
-$db['aegeeorg']['password'] = 'YZ*WLf:GvZ3;PSgQ+\o#BcI+#4Ws';
-$db['aegeeorg']['database'] = 'ab';
-$db['aegeeorg']['dbdriver'] = 'mysql';
-$db['aegeeorg']['dbprefix'] = '';
-$db['aegeeorg']['pconnect'] = TRUE;
-$db['aegeeorg']['db_debug'] = TRUE;
-$db['aegeeorg']['cache_on'] = FALSE;
-$db['aegeeorg']['cachedir'] = '';
-$db['aegeeorg']['char_set'] = 'utf8';
-$db['aegeeorg']['dbcollat'] = 'utf8_general_ci';
-$db['aegeeorg']['swap_pre'] = '';
-$db['aegeeorg']['autoinit'] = TRUE;
-$db['aegeeorg']['stricton'] = FALSE;
-*/
 
 /* End of file database.php */
 /* Location: ./application/config/database.php */
