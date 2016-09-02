@@ -5,6 +5,13 @@
 <p>There are currently no known bugs.</p>
 <ul></ul>
 
+<h2>Version 2.0.2</h2>
+<datetime>2016-09-02</datetime>
+<ul>
+<li>[BUG] Type error when reducing font size.</li>
+<li>[DOCS] Improved internal documentation.</li>
+</ul>
+
 <h2>Version 2.0.1</h2>
 <datetime>2016-08-05</datetime>
 <ul>
@@ -14,12 +21,15 @@
 
 <h2>Version 2.0</h2>
 <datetime>2016-08-03</datetime>
-<p>After a long time the logo-generator was moved from a personal server to AEGEE's Zeus server. Thanks to Wim for his help on this. The changelog below.</p>
+<p>After a long time the logo-generator was moved from a personal server to AEGEE's Zeus server. Thanks to Wim for his help on this. The changelog below is a small summary of all the improvements</p>
 <ul>
 	<li>[CORE] Updated to latest CodeIgniter 3.x</li>
-	<li>Linked to Zeus' local database </li>
-	<li>Improved progress bar </li>
 	<li>[BUG] Fixed PDF and EPS functionality</li>
+	<li>Linked to Zeus' local database </li>
+	<li>Improved progress bar feedback and options</li>
+	<li>Improved UI</li>
+	<li>Improved local sizeing and positioning algorithm</li>
+	<li>Added statistics</li>
 
 </ul>
 

@@ -1,5 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
+// important to prevent script from timing out before the generation has completed.
 ini_set('max_execution_time', 30000);
 
 /**
@@ -16,6 +17,7 @@ class Logomodel extends CI_Model
 	// from config
 	protected $conf = array();
 	
+	// specific session token
 	protected $token = null;
 	
 	/**
@@ -37,6 +39,14 @@ class Logomodel extends CI_Model
 		
 	}
 
+	/**
+	 * PROCESS METHODS
+	 * fn init
+	 * fn setup
+	 * fn gnerate
+	 * fn package
+	 */
+	 
 	/**
 	 * init the information for generating the logos
 	 */
@@ -85,6 +95,7 @@ class Logomodel extends CI_Model
 
 	/**
 	 * start generating folders and perpare the texts
+	 * void function
 	 */
 	public function setup()
 	{ 		
@@ -123,6 +134,7 @@ class Logomodel extends CI_Model
 	
 	/**
 	 * init the information for generating the logos
+	 * void function
 	 */
 	public function generate()
 	{	
@@ -171,30 +183,130 @@ class Logomodel extends CI_Model
 		$this->package();
 	}
 	
-	/**
-	 * Cancelling the generation
-	 */
-	public function cancel($token)
-	{
-		//$this->resetSessionInfo();
-		// method to cancel
-		// set status to -1
-		// check at every stage of the script if the status has become -1, if so cancel
-		$this->setProgress(-1, 'Cancelling process', $token);
-		return true;
-	}
 	
 	/**
-	 *
+	 * Zip all the files
+	 * return filename of package
 	 */
-	public function isCancelled()
+	protected function package()
 	{
-		$progress = $this->getProgress();
-		if($progress['status'] == -1){
-			return true;
+		$overwrite = false;
+		$this->setProgress(90, 'Zipping files into archive');
+		$destination = $this->getFolder() . '/'. $this->settings['token']. '.zip';
+		
+		//if the zip file already exists and overwrite is false, return false
+		if(file_exists($destination) ) { 
+			$overwrite = true;
 		}
-		return false;
+		
+		// include AEGEE-Europe logos
+		$includeExtra = false;
+		if($this->settings['extra'])
+		{
+			$this->setProgress(91, 'Adding extra files to download');
+			if(array_key_exists($this->settings['extra'], $this->conf['extraFiles']))
+			{
+				$includeExtra = true;
+				$extra = $this->conf['extraFiles'][$this->settings['extra']];
+				$this->settings['files']['zip'] = array_merge((array)$this->settings['files']['zip'], (array)$extra);
+			}
+		}
+		
+		//vars
+		$valid_files = array();
+		
+		//if files were passed in...
+		if(is_array($this->settings['files']['zip'])) 
+		{
+			//cycle through each file
+			foreach($this->settings['files']['zip'] as $file) 
+			{
+	
+				//make sure the file exists
+				if(file_exists($file[0])) 
+				{
+					$valid_files[] = $file;
+				}
+			}
+		}
+		
+		//if we have good files...
+		if(count($valid_files)) 
+		{
+			$this->setProgress(92, 'Creating Zip archive');
+			//create the archive
+			$zip = new ZipArchive();
+			$res = $zip->open($destination, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE );
+
+			if($res !== true) 
+			{
+				$this->setProgress(999, 'Opening Zip archive caused an error ('.$this->zipMessage($res).') '.$destination.'; '.$overwrite.'');
+				return false;
+			}
+			
+			$nFiles = count($valid_files);
+			//add the files
+			$this->setProgress(93, 'Zipping...');
+			foreach($valid_files as $file) 
+			{
+				$fileName = explode("/", $file[0]);
+				
+				// use local directories
+				$subdir = '';
+				$local = '';
+				if($includeExtra)
+				{
+					$local = $this->sanitizeSpecialChars($file[1]);
+					$subdir = ucwords($local).'/';
+				}
+			
+				// in case of few files or the incluion of the AEGEE-Europe logos keep folder structure simple
+				if($nFiles <= 8 || strtolower($local) == 'europe')
+				{
+					$targetName = $subdir.$fileName[count($fileName)-1];
+				}
+				elseif($nFiles <= 16 )
+				{
+					// by colour
+					$targetName = $subdir.ucwords($file[3]).'/'.$fileName[count($fileName)-1];
+				}
+				elseif($nFiles <= 32 )
+				{
+					// by colour / size
+					$targetName = $subdir.ucwords($file[3]).'/'.ucwords($file[2] ).'/'.$fileName[count($fileName)-1];
+				}			
+				else
+				{
+					// by colour / size / type
+					$targetName = $subdir.ucwords($file[3]).'/'.ucwords($file[2] ).'/'.ucwords($file[4] ).'/'.$fileName[count($fileName)-1];				
+				}			
+				
+				$zip->addFile($file[0], $targetName);
+			}
+			
+			//close the zip -- done!
+			$res2 = $zip->close();
+			
+			$this->setProgress(99, 'Finished zipping files');
+
+			if($res2 !== true)
+			{
+				$this->setProgress(999, 'Zipping files caused an error');
+				return false;
+			}
+		}
+		else
+		{
+			$this->setProgress(999, 'Files are not listed ('.count($valid_files).' : '.print_r($valid_files, true).')');
+			return false;
+		}
+		$this->setProgress(100, 'Done!');
 	}
+
+	
+	/**
+	 * SUPPORTING METHODS
+	 */
 	
 	/**
 	 * Get all local information
@@ -340,7 +452,7 @@ class Logomodel extends CI_Model
 				{
 					$factor = 1.0; // initial factor to redue font size with 
 					$lowerBound = 0.75; // max lower bound factor
-					$result = $this->decreaseFont($defaultFontSize, $availableSpace, $fontUnitsEm, $relDims, $lowerBound, $factor);
+					$result = $this->decreaseFont($defaultFontSize, $availableSpace, $fontUnitsEm, $relDims['width'], $lowerBound, $factor);
 					
 					if($result)
 					{
@@ -497,13 +609,22 @@ class Logomodel extends CI_Model
 	
 	
 	/**
-	 * 
+	 * function decreaseFont
+	 * Slowly reduce font size between upper and lower bounds, and return the first font size that fits within the available space.
+	 *
+	 * @param float $defaultFontSize the default font size as set in the config
+	 * @param float $availableSpace available width for the text
+	 * @param float $fontUnitsEm default Em size of the font
+	 * @param float $relWidth relative width of the text in fontUnitsEm
+	 * @param float|false $lowerBound lower bound to factor the font-size with
+	 * @param float|false $upperBound starting point to factor the font-size with
+	 * @return array|false new values that fit the availablespace or false if we couldn't fit it
 	 */
-	protected function decreaseFont($defaultFontSize, $availableSpace, $fontUnitsEm, $relWidth, $lowerBound = false, $factor = false)
+	protected function decreaseFont($defaultFontSize, $availableSpace, $fontUnitsEm, $relWidth, $lowerBound = false, $upperBound = false)
 	{
-		$factor = $factor || 1.0; // factor to 	
+		$factor = $upperBound || 1.0; // factor to 	
 		$lowerBound = $lowerBound || 0.8; // factor to 	
-		$prevTestFontSize = $defaultFontSize;
+		$prevTestFontSize = $defaultFontSize; // save font size
 		
 		while( $factor >= $lowerBound )
 		{
@@ -536,9 +657,11 @@ class Logomodel extends CI_Model
 	
 	
 	/**
-	 *
-	 */
-	protected function getFontUnitsEm($fontFile)
+	 *  @brief Try to retrieve the units per Em of the font
+	 *  
+	 *  @param string $fontFile file within the RESOURCEPATH to use
+	 *  @return int|false		the units per Em or false if the file couldn't not be read or opened.
+	 */	protected function getFontUnitsEm($fontFile)
 	{
 
 		if (file_exists(RESOURCEPATH. $fontFile)) 
@@ -548,18 +671,24 @@ class Logomodel extends CI_Model
 			$result = (array)$result[0];
 			return $result['@attributes']["units-per-em"];
 		}
-		else 
-		{
-			$this->setProgress(999, 'Failed to open font file');
-			return false;		
-		}
+
+		$this->setProgress(999, 'Failed to open or read font file');
+		return false;		
+		
 	}
 	
 	/**
-	 * calculate the final font size (em) and width (px) 
+	 * calculate the final font size (em) or width (px) 
+	 *
+	 * @param string $which 	file within the RESOURCEPATH to use
+	 * @param int $fontSize 	file within the RESOURCEPATH to use
+	 * @param int $width 		file within the RESOURCEPATH to use
+	 * @param int $fontUnitsEm 	file within the RESOURCEPATH to use
+	 * @param int $relWidth 	file within the RESOURCEPATH to use
+	 * @return int
 	 */	
 	protected function calcRealFontSize($which = 'width', $fontSize = 0, $width = 0, $fontUnitsEm = 0, $relWidth = 0)
-	{
+	{	
 		// font size
 		if($which == 'size')
 		{
@@ -571,7 +700,6 @@ class Logomodel extends CI_Model
 		if($which == 'width')
 		{
 			$width = $fontSize * $relWidth / $fontUnitsEm;
-			//$height = $fontSize * $relWidth / $fontUnitsEm;
 			return $width;
 		}
 	}	
@@ -639,18 +767,6 @@ class Logomodel extends CI_Model
 		}
 	}
 	
-	/**
-	 * base ecode
-	 * not necessary any more
-	
-	protected function base64encode_font ($filename=string,$filetype=string) {
-		if (file_exists(RESOURCEPATH. $filename))  {
-			$binary = fread(fopen(RESOURCEPATH.$filename, "r"), filesize(RESOURCEPATH.$filename));
-			
-			return 'data:font/' . $filetype . ';charset=utf-8;base64,' . base64_encode($binary);
-		}
-	}
-	*/
 	/**
 	 * get dimensions of file
 	 */
@@ -974,127 +1090,8 @@ class Logomodel extends CI_Model
 	}
 	
 	/**
-	 * Zip all the files
-	 * return filename of package
-	 */
-	protected function package()
-	{
-		$overwrite = false;
-		$this->setProgress(90, 'Zipping files into archive');
-		$destination = $this->getFolder() . '/'. $this->settings['token']. '.zip';
-		
-		//if the zip file already exists and overwrite is false, return false
-		if(file_exists($destination) ) { 
-			$overwrite = true;
-		}
-		
-		// include AEGEE-Europe logos
-		$includeExtra = false;
-		if($this->settings['extra'])
-		{
-			$this->setProgress(91, 'Adding extra files to download');
-			if(array_key_exists($this->settings['extra'], $this->conf['extraFiles']))
-			{
-				$includeExtra = true;
-				$extra = $this->conf['extraFiles'][$this->settings['extra']];
-				$this->settings['files']['zip'] = array_merge((array)$this->settings['files']['zip'], (array)$extra);
-			}
-		}
-		
-		//vars
-		$valid_files = array();
-		
-		//if files were passed in...
-		if(is_array($this->settings['files']['zip'])) 
-		{
-			//cycle through each file
-			foreach($this->settings['files']['zip'] as $file) 
-			{
-	
-				//make sure the file exists
-				if(file_exists($file[0])) 
-				{
-					$valid_files[] = $file;
-				}
-			}
-		}
-		
-		//if we have good files...
-		if(count($valid_files)) 
-		{
-			$this->setProgress(92, 'Creating Zip archive');
-			//create the archive
-			$zip = new ZipArchive();
-			$res = $zip->open($destination, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE );
-
-			if($res !== true) 
-			{
-				$this->setProgress(999, 'Opening Zip archive caused an error ('.$this->zipMessage($res).') '.$destination.'; '.$overwrite.'');
-				return false;
-			}
-			
-			$nFiles = count($valid_files);
-			//add the files
-			$this->setProgress(93, 'Zipping...');
-			foreach($valid_files as $file) 
-			{
-				$fileName = explode("/", $file[0]);
-				
-				// use local directories
-				$subdir = '';
-				$local = '';
-				if($includeExtra)
-				{
-					$local = $this->sanitizeSpecialChars($file[1]);
-					$subdir = ucwords($local).'/';
-				}
-			
-				// in case of few files or the incluion of the AEGEE-Europe logos keep folder structure simple
-				if($nFiles <= 8 || strtolower($local) == 'europe')
-				{
-					$targetName = $subdir.$fileName[count($fileName)-1];
-				}
-				elseif($nFiles <= 16 )
-				{
-					// by colour
-					$targetName = $subdir.ucwords($file[3]).'/'.$fileName[count($fileName)-1];
-				}
-				elseif($nFiles <= 32 )
-				{
-					// by colour / size
-					$targetName = $subdir.ucwords($file[3]).'/'.ucwords($file[2] ).'/'.$fileName[count($fileName)-1];
-				}			
-				else
-				{
-					// by colour / size / type
-					$targetName = $subdir.ucwords($file[3]).'/'.ucwords($file[2] ).'/'.ucwords($file[4] ).'/'.$fileName[count($fileName)-1];				
-				}			
-				
-				$zip->addFile($file[0], $targetName);
-			}
-			
-			//close the zip -- done!
-			$res2 = $zip->close();
-			
-			$this->setProgress(99, 'Finished zipping files');
-
-			if($res2 !== true)
-			{
-				$this->setProgress(999, 'Zipping files caused an error');
-				return false;
-			}
-		}
-		else
-		{
-			$this->setProgress(999, 'Files are not listed ('.count($valid_files).' : '.print_r($valid_files, true).')');
-			return false;
-		}
-		$this->setProgress(100, 'Done!');
-	}
-
-	/**
 	 * get the zip file and create the target name for the download
-	 * NOT IN LOGP GENERATION PATH
+	 * NOT IN LOGO GENERATION PATH
 	 */
 	public function getZipFilenames($token)
 	{
@@ -1112,6 +1109,69 @@ class Logomodel extends CI_Model
 		return false;
 	}
 	
+	
+	/**
+	 * remove old files
+	 */
+	protected function rmArchives()
+	{
+		$dir = $this->getFolder();
+		if(file_exists($dir))
+		{
+			$files = scandir($dir);
+			foreach($files as $file)
+			{
+				if($file === '.' || $file === '..') {continue;} 
+				if(is_file($dir.'/'.$file))
+				{
+					$fileTime = filectime($dir.'/'.$file);
+					if( time() - $fileTime > (60*60*1)  )
+					{
+						if (preg_match('/\.zip$/i', $file)) 
+						{
+							unlink($dir.'/'.$file);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	/******************************
+	 * PROCESS SUPPORTING METHODS *
+	 ******************************
+	 * fn cancel()
+	 * fn isCancelled()
+	 * fn initProgress()
+	 * fn setProgress()
+	 * fn getProgress()
+	 */
+	 
+	/**
+	 * Cancelling the generation
+	 */
+	public function cancel($token)
+	{
+		//$this->resetSessionInfo();
+		// method to cancel
+		// set status to -1
+		// check at every stage of the script if the status has become -1, if so cancel
+		$this->setProgress(-1, 'Cancelling process', $token);
+		return true;
+	}
+	
+	/**
+	 *
+	 */
+	public function isCancelled()
+	{
+		$progress = $this->getProgress();
+		if($progress['status'] == -1){
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 *
 	 */
@@ -1124,11 +1184,10 @@ class Logomodel extends CI_Model
 			'token' => $token,
 			'status' => $status,
 			'message' => $this->settings['messageLog'],
-			'messageLog' => $message,
+			'messageLog' => ($this->config->item('log_threshold') > 0) ? $message : '',
 			'step' => $this->settings['step'],
 			'totalSteps' => $this->settings['totalSteps'],
 			'bodyCode' => $bodyCode
-			//'settings' => serialize($this->settings)
 		);
 
 		if(!$this->db->insert('generator', $dbdata)){
@@ -1159,8 +1218,15 @@ class Logomodel extends CI_Model
 		
 		// data from session is still available
 		else{
-			$this->settings['messageLog'] .= "\n[{$status}] {$message}";
-			
+			if($this->config->item('log_threshold') > 0)
+			{
+				$this->settings['messageLog'] .= "\n[{$status}] {$message}";
+			}
+			else
+			{
+				$this->settings['messageLog'] = '';
+			}
+
 			$token = ($token != false) ? $token : $this->token;
 			$oldData = $this->getProgress($token);
 			$this->settings['step']++;
@@ -1232,37 +1298,23 @@ class Logomodel extends CI_Model
 		return $array;
 	}
 	
-	/**
-	 * remove old files
+	/************************
+	 * SUPPORTING FUNCTIONS *
+	 ************************
+	 * fn sanitizeSpecialChars()
+	 * fn strtouppertr()
+	 * fn rmPrefix()
+	 * fn zipMessage()
+	 * fn microtimeFloat()
 	 */
-	protected function rmArchives()
-	{
-		$dir = $this->getFolder();
-		if(file_exists($dir))
-		{
-			$files = scandir($dir);
-			foreach($files as $file)
-			{
-				if($file === '.' || $file === '..') {continue;} 
-				if(is_file($dir.'/'.$file))
-				{
-					$fileTime = filectime($dir.'/'.$file);
-					if( time() - $fileTime > (60*60*1)  )
-					{
-						if (preg_match('/\.zip$/i', $file)) 
-						{
-							unlink($dir.'/'.$file);
-						}
-					}
-				}
-			}
-		}
-	}
-	
+
 	/**
-	 * Remove accents from characters
-	 * usage for file names
-	 */	
+	 *  sanitizeSpecialChars() Remove accents from characters
+	 *  usage for file names
+	 *  
+	 *  @param string $str 
+	 *  @return string
+	 */
 	protected function sanitizeSpecialChars($str)
 	{
 		$unwanted_array = array(   
@@ -1285,23 +1337,33 @@ class Logomodel extends CI_Model
 	}
 	
 	/**
-	 * Safe string to upper function which includes accented characters
-	 */	
+	 *  strtouppertr() Safe string to upper function which includes accented characters
+	 *  
+	 *  @param string $str string to convert to upper case
+	 *  @return string converted string
+	 */
 	protected function strtouppertr($str)
 	{ 
 		return mb_convert_case($str, MB_CASE_UPPER, "UTF-8"); 
 	} 
 	
 	/**
-	 * Remove AEGEE- prefix
-	 */	
-	protected function rmPrefix($str)
+	 *  rmPrefix() Removes AEGEE- prefix from local name to get city name
+	 *  
+	 *  @param string $local AEGEE local name
+	 *  @return string city name
+	 */
+	protected function rmPrefix($local)
 	{ 
-		return substr($str, 6);
+		return substr($local, 6);
 	} 
 
 	/**
-	 * Zip error messages
+	 *  zipMessage() translate zipping error codes to messages
+	 *  @since 2.x
+	 *  
+	 *  @param int $code ZipArchive error code
+	 *  @return string return the message
 	 */
 	public function zipMessage($code)
 	{
@@ -1384,7 +1446,12 @@ class Logomodel extends CI_Model
 		}                
 	}
 
-	private function  microtimeFloat()
+	/**
+	 *  microtimeFloat()
+	 *  
+	 *  @return microtime in milliseconds
+	 */
+	private function microtimeFloat()
 	{
 		list($usec, $sec) = explode(" ", microtime());
 		return ((float)$usec + (float)$sec);

@@ -14,6 +14,7 @@
 	<meta name="msapplication-TileColor" content="#ff6600"/> 
 	<meta name="msapplication-TileImage" content="{{ci_url function='site_url' segments="assets/img/myaegee-win8-tile.png"}}"/>
 	<link rel="shortcut icon" href="{{ci_url function='site_url' segments="assets/img/favicon.png"}}" type="image/x-icon" />
+	<link rel="author" href="{{ci_url function='site_url' segments="humans.txt"}}" />
 	<link href="{{ci_url function='site_url' segments="assets/css/style.css"}}" media="all" rel="stylesheet" />
 	<link href="{{ci_url function='site_url' segments="assets/css/aegee-top-links.css"}}" media="all" rel="stylesheet" />
 	<link href="{{ci_url function='site_url' segments="assets/css/start/jquery-ui-1.10.3.custom.css"}}" rel="stylesheet">

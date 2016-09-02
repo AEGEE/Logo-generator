@@ -29,21 +29,16 @@ $config['srcColours'] = array(
 // front 
 $config['srcFonts'] = array(
 	'set1' => array(
-		//'Helvetica'  => 'fonts/Helvetica.svg', //#Helvetica
 		'Helvetica Neue LT Pro 55 roman'  => array(
-			'svg'=> 'fonts/Helvetica.svg',
-			'woff'=> 'fonts/Helvetica.woff'
+			'svg'=> 'fonts/Helvetica.svg'
 		), //#Helvetica
-		//'HelveticaCond' => 'fonts/HelveticaCond.svg'//#HelveticaCond
 		'Helvetica Neue LT Pro' => array(
-			'svg' => 'fonts/HelveticaCond.svg', //#HelveticaCond
-			'woff' => 'fonts/HelveticaCond.woff'
+			'svg' => 'fonts/HelveticaCond.svg' //#HelveticaCond
 		)
 	), 
 	'set2' => array(
 		'Open Sans' => array(
-			'svg' => 'fonts/OpenSans.svg',
-			'woff' => 'fonts/OpenSans.woff' // #OpenSans
+			'svg' => 'fonts/OpenSans.svg'
 		)
 	)
 );	
@@ -51,7 +46,7 @@ $config['srcFonts'] = array(
 // font area anchor
 $config['textanchor'] = array(
 	'thumb' => array(
-		'local' => array('x' => 130.22, 'y1' => 66.886, 'y2' => 66.886), // y2 klopt niet..
+		'local' => array('x' => 130.22, 'y1' => 66.886, 'y2' => 66.886), // y2 doesn't seem right
 		'subtext' => array('x' => 0, 'y1' => 0, 'y2' => 0)
 	),
 	'small' => array(

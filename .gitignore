@@ -1,6 +1,8 @@
-*/config/development
+*/config/config.php
+*/config/database.php
 */logs/log-*.php
 !*/logs/index.html
 */cache/*
 !*/cache/index.html
 !*/cache/.htaccess
+*/bak/*
