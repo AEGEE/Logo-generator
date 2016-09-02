@@ -60,3 +60,8 @@ In *index.php* set `define('ENVIRONMENT', 'production');`
 In *config.php* set `$config['log_threshold'] = 4`
 The log messages can be found through ftp in `application/logs`, also within the MySQL table `generator` logs per logo generation request can be found in the `messageLog` column.
 PHP error logs can also be viewed within Zeus useradmin interface.
+
+## System Requirements
+* PHP 5.3+
+* Imagick and PHP-imagick lib
+* Inkscape
