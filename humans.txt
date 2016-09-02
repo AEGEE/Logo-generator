@@ -1,0 +1,15 @@
+/* TEAM */
+	Author: Maurits Korse.	
+	Site: http://mkor.se/contact
+	Contact: maurits [at] mauritskorse.nl
+	Twitter: @mauritskorse		
+
+/* THANKS */
+	Zeus webmaster: Wim van Ravenstijn
+	
+
+/* SITE */
+	Last update: 2016/09/02	
+	Dotype: HTML5
+	Components: jQuery
+	IDE: Notepad++, Illustrator, WinSCP
